@@ -1,0 +1,57 @@
+import express from "express";
+import conectarAoBanco from "./src/config/dbConfig.js";
+
+
+await conectarAoBanco(process.env.STRING_CONEXAO)
+
+
+const app = express();
+app.use(express.json());
+
+let conexao;
+
+(async () => {
+    conexao = await conectarAoBanco(process.env.STRING_CONEXAO);
+    console.log("Servidor escutando...");
+    app.listen(3000);
+})();
+
+async function getTodosPosts() {
+    const db = conexao.db("ONG")
+    const colecao = db.collection("posts")
+    return colecao.find().toArray()
+
+}
+
+app.get("/posts", async (req, res) => {
+    const posts = await getTodosPosts()
+    res.status(200).json(posts);
+});
+
+function buscarPostPorID(id) {
+    return posts.findIndex((post) => {
+        return post.id === Number(id)
+    })
+}
+
+
+app.get("/posts/:id", (req, res) => {
+    const index = buscarPostPorID(req.params.id)
+    res.status(200).json(posts[index]);
+});
+
+function buscarPostsPorCategoria(categoria) {
+    categoria = categoria.toLowerCase();
+    return posts.filter(post => post.categoria.toLowerCase() === categoria);
+  }
+
+app.get("/posts/categoria/:categoria", (req, res) => {
+    const categoria = req.params.categoria;
+    const postsPorCategoria = buscarPostsPorCategoria(categoria);
+
+    if (postsPorCategoria.length > 0) {
+        res.status(200).json(postsPorCategoria);
+    } else {
+        res.status(404).json({ message: "Categoria não encontrada." });
+    }
+});
